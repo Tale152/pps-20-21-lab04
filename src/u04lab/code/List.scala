@@ -69,7 +69,9 @@ object Lists extends App {
 
     def appendByFold[A](l1: List[A], l2: List[A]): List[A] = ???
 
-    def length(l: List[_]): Int = ???
+    def length(l: List[_]): Int = foldLeft(l)(0)((acc, _) => acc+1)
+
+    def contains[A](l: List[A], elem: A): Boolean = length(filter(l)(_==elem)) > 0
   }
 
   // Note "List." qualification

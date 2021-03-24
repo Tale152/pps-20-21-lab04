@@ -72,6 +72,7 @@ object Lists extends App {
     def length(l: List[_]): Int = foldLeft(l)(0)((acc, _) => acc+1)
 
     def contains[A](l: List[A], elem: A): Boolean = length(filter(l)(_==elem)) > 0
+
   }
 
   // Note "List." qualification

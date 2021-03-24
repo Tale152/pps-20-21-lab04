@@ -2,8 +2,9 @@ package u04lab.code
 
 import u04lab.code.Lists.List
 import u04lab.code.Lists.List._
-import u04lab.code.Optionals.Option._
 import u04lab.code.Optionals._
+import u04lab.code.Streams.Stream
+import u04lab.code.Streams.Stream.take
 
 import scala.util.Random
 
@@ -23,43 +24,36 @@ trait PowerIteratorsFactory {
 
 class PowerIteratorsFactoryImpl extends PowerIteratorsFactory {
 
-  private case class PowerIteratorImpl[A](getNext: List[A] => Option[A]) extends PowerIterator[A]{
+  private case class PowerIteratorImpl[A](var stream: Stream[A] = Stream.empty()) extends PowerIterator[A]{
 
-    private var soFarList: List[A] = Nil()
+    private var soFarList:List[A] = Nil()
 
-    override def next(): Option[A] = {
-      getNext(soFarList) match {
-        case Some(elem) => soFarList = append(soFarList, Cons(elem, Nil())); Some(elem)
-        case None() => None()
-      }
+    override def next(): Optionals.Option[A] = stream match {
+      case Stream.Cons(h, t) =>
+        soFarList = append(soFarList, List.Cons(h(), Nil()))
+        stream = t()
+        Option.Some(h())
+      case _ => Option.empty
     }
 
-    override def allSoFar(): List[A] = soFarList
+    override def allSoFar(): Lists.List[A] = soFarList
 
     override def reversed(): PowerIterator[A] = fromList(reverse(soFarList))
 
   }
 
-  override def incremental(start: Int, successive: Int => Int): PowerIterator[Int] = new PowerIteratorImpl[Int](
-    currList => drop(currList, length(currList)-1) match {
-      case Cons(head, _) => Some(successive(head))
-      case _ => Some(start)
-    }
-  )
+  override def incremental(start: Int, successive: Int => Int): PowerIterator[Int] =
+    PowerIteratorImpl(Stream.iterate(start)(successive))
 
-  override def fromList[A](list: List[A]): PowerIterator[A] = new PowerIteratorImpl[A](
-    currList => drop(list, length(currList)) match {
-      case Cons(head, _) => Some[A](head)
-      case _ => None[A]()
-    }
-  )
+  private def listToStream[A](list: List[A]): Stream[A] = list match {
+    case Cons(h,t) => Stream.Cons(() => h, () => listToStream(t))
+    case _ => Stream.empty()
+  }
 
-  override def randomBooleans(size: Int): PowerIterator[Boolean] = new PowerIteratorImpl[Boolean](
-    currList => if (length(currList) < size) {
-      Some(Random.nextBoolean())
-    } else {
-      None[Boolean]()
-    }
-  )
+  override def fromList[A](list: List[A]): PowerIterator[A] =
+    PowerIteratorImpl(listToStream(list))
+
+  override def randomBooleans(size: Int): PowerIterator[Boolean] =
+    PowerIteratorImpl(take(Stream.generate(Random.nextBoolean()))(size))
 
 }
